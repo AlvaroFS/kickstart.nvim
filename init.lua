@@ -455,10 +455,10 @@ require('lazy').setup({
     },
     opts = {
       inlay_hints = {
-        enabled = false,
+        enabled = true,
       },
       codelens = {
-        enabled = false,
+        enabled = true,
       },
     },
     config = function()
