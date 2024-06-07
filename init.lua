@@ -889,7 +889,7 @@ require('lazy').setup({
       'nvim-treesitter/nvim-treesitter-context',
     },
     opts = {
-      ensure_installed = { 'bash', 'fish', 'c', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'odin', 'glsl' },
+      ensure_installed = { 'bash', 'fish', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'odin', 'glsl' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
