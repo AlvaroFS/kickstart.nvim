@@ -629,12 +629,7 @@ require('lazy').setup({
             },
           },
         },
-        -- ols = {},
-        -- glslls = {},
       }
-
-      require('lspconfig').ols.setup {}
-      require('lspconfig').glslls.setup {}
 
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
