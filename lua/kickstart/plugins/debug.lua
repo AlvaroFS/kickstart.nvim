@@ -83,18 +83,84 @@ return {
     dap.listeners.before.event_terminated['dapui_config'] = dapui.close
     dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
+    dap.adapters.gdb = {
+      type = 'executable',
+      command = '/usr/bin/gdb', -- adjust as needed
+      name = 'gdb',
+      args = { '--quiet', '--interpreter=dap' },
+    }
     dap.adapters.lldb = {
       type = 'executable',
-      command = '/usr/bin/lldb-vscode', -- adjust as needed
+      command = '/usr/bin/lldb-dap', -- adjust as needed
       name = 'lldb',
     }
 
     local lldb = {
-      name = 'Launch lldb',
+      name = 'Launch (LLDB)',
       type = 'lldb', -- matches the adapter
       request = 'launch', -- could also attach to a currently running process
       program = function()
-        return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+        local path = vim.fn.input {
+          prompt = 'Path to executable: ',
+          default = vim.fn.getcwd() .. '/',
+          completion = 'file',
+        }
+
+        return (path and path ~= '') and path or dap.ABORT
+      end,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = false,
+      args = {},
+      runInTerminal = false,
+    }
+    local gdb = {
+      name = 'Launch (GDB)',
+      type = 'gdb', -- matches the adapter
+      request = 'launch', -- could also attach to a currently running process
+      program = function()
+        local path = vim.fn.input {
+          prompt = 'Path to executable: ',
+          default = vim.fn.getcwd() .. '/',
+          completion = 'file',
+        }
+
+        return (path and path ~= '') and path or dap.ABORT
+      end,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = false,
+      args = {},
+      runInTerminal = false,
+    }
+    local attach_lldb = {
+      name = 'Attach to process (LLDB)',
+      type = 'lldb',
+      request = 'attach',
+      processId = require('dap.utils').pick_process,
+    }
+    local attach_gdb = {
+      name = 'Attach to process (GDB)',
+      type = 'gdb',
+      request = 'attach',
+      processId = require('dap.utils').pick_process,
+    }
+    local liquigen_lldb = {
+      name = 'Launch LG (LLDB)',
+      type = 'lldb', -- matches the adapter
+      request = 'launch', -- could also attach to a currently running process
+      program = function()
+        return vim.fn.getcwd() .. '/liquigen/liquigen'
+      end,
+      cwd = '${workspaceFolder}',
+      stopOnEntry = false,
+      args = {},
+      runInTerminal = false,
+    }
+    local liquigen_gdb = {
+      name = 'Launch LG (GDB)',
+      type = 'gdb', -- matches the adapter
+      request = 'launch', -- could also attach to a currently running process
+      program = function()
+        return vim.fn.getcwd() .. '/liquigen/liquigen'
       end,
       cwd = '${workspaceFolder}',
       stopOnEntry = false,
@@ -103,7 +169,12 @@ return {
     }
 
     dap.configurations.odin = {
-      lldb, -- different debuggers or more configurations can be used here
+      liquigen_gdb,
+      liquigen_lldb,
+      gdb,
+      lldb,
+      attach_gdb,
+      attach_lldb,
     }
     require('nvim-dap-virtual-text').setup {
       enabled = true,
