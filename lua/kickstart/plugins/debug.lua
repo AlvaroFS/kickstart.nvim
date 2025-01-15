@@ -45,10 +45,11 @@ return {
     }
 
     -- Basic debugging keymaps, feel free to change to your liking!
+    vim.keymap.set('n', '<F4>', dap.terminate, { desc = 'Debug: Terminate' })
     vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
-    vim.keymap.set('n', '<F10>', dap.step_over, { desc = 'Debug: Step Over' })
-    vim.keymap.set('n', '<F11>', dap.step_into, { desc = 'Debug: Step Into' })
-    vim.keymap.set('n', '<F12>', dap.step_out, { desc = 'Debug: Step Out' })
+    vim.keymap.set('n', '<F6>', dap.step_over, { desc = 'Debug: Step Over' })
+    vim.keymap.set('n', '<F10>', dap.step_into, { desc = 'Debug: Step Into' })
+    vim.keymap.set('n', '<F11>', dap.step_out, { desc = 'Debug: Step Out' })
     vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle Breakpoint' })
     vim.keymap.set('n', '<leader>B', function()
       dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
@@ -95,86 +96,116 @@ return {
       name = 'lldb',
     }
 
-    local lldb = {
-      name = 'Launch (LLDB)',
-      type = 'lldb', -- matches the adapter
-      request = 'launch', -- could also attach to a currently running process
-      program = function()
-        local path = vim.fn.input {
-          prompt = 'Path to executable: ',
-          default = vim.fn.getcwd() .. '/',
-          completion = 'file',
-        }
+    prompt_program = function()
+      local path = vim.fn.input {
+        prompt = 'Path to executable: ',
+        default = vim.fn.getcwd() .. '/',
+        completion = 'file',
+      }
+      return (path and path ~= '') and path or dap.ABORT
+    end
 
-        return (path and path ~= '') and path or dap.ABORT
-      end,
-      cwd = '${workspaceFolder}',
-      stopOnEntry = false,
-      args = {},
-      runInTerminal = false,
-    }
-    local gdb = {
-      name = 'Launch (GDB)',
+    prompt_args = function()
+      local argument_string = vim.fn.input 'Program arguments: '
+      return vim.fn.split(argument_string, ' ', true)
+    end
+    -- predefine configs to change the working directory from program prompt
+    local gdb_janga_project
+    local gdb_liquigen
+    local gdb_launch
+    local gdb_attach
+    local lldb_liquigen
+    local lldb_launch
+    local lldb_attach
+
+    gdb_janga_project = {
+      name = '(GDB)  Launch JangaFX project',
       type = 'gdb', -- matches the adapter
       request = 'launch', -- could also attach to a currently running process
       program = function()
-        local path = vim.fn.input {
-          prompt = 'Path to executable: ',
-          default = vim.fn.getcwd() .. '/',
-          completion = 'file',
-        }
+        local project_name = vim.fn.input 'Project name: '
+        local path = vim.fn.getcwd()
+        path = path .. '/'
+        path = path .. project_name
 
-        return (path and path ~= '') and path or dap.ABORT
+        gdb_janga_project.cwd = path
+
+        path = path .. '/'
+        path = path .. project_name
+        return path
       end,
-      cwd = '${workspaceFolder}',
       stopOnEntry = false,
       args = {},
       runInTerminal = false,
     }
-    local attach_lldb = {
-      name = 'Attach to process (LLDB)',
-      type = 'lldb',
-      request = 'attach',
-      processId = require('dap.utils').pick_process,
+    gdb_liquigen = {
+      name = '(GDB)  Launch LG',
+      type = 'gdb',
+      request = 'launch',
+      program = function()
+        return '${workspaceFolder}/liquigen/liquigen'
+      end,
+      cwd = '${workspaceFolder}/liquigen',
+      stopOnEntry = false,
+      runInTerminal = false,
     }
-    local attach_gdb = {
-      name = 'Attach to process (GDB)',
+    gdb_launch = {
+      name = '(GDB)  Launch...',
+      type = 'gdb',
+      request = 'launch',
+      program = prompt_program,
+      args = prompt_args,
+      -- TODO: set cwd
+      stopOnEntry = false,
+      runInTerminal = false,
+    }
+    gdb_attach = {
+      name = '(GDB)  Attach to process',
       type = 'gdb',
       request = 'attach',
-      processId = require('dap.utils').pick_process,
+      pid = require('dap.utils').pick_process,
+      -- TODO: set cwd
+      program = prompt_program,
     }
-    local liquigen_lldb = {
-      name = 'Launch LG (LLDB)',
-      type = 'lldb', -- matches the adapter
-      request = 'launch', -- could also attach to a currently running process
+
+    lldb_liquigen = {
+      name = '(LLDB) Launch LG',
+      type = 'lldb',
+      request = 'launch',
       program = function()
-        return vim.fn.getcwd() .. '/liquigen/liquigen'
+        return '${workspaceFolder}/liquigen/liquigen'
       end,
-      cwd = '${workspaceFolder}',
+      cwd = '${workspaceFolder}/liquigen',
       stopOnEntry = false,
-      args = {},
       runInTerminal = false,
     }
-    local liquigen_gdb = {
-      name = 'Launch LG (GDB)',
-      type = 'gdb', -- matches the adapter
-      request = 'launch', -- could also attach to a currently running process
-      program = function()
-        return vim.fn.getcwd() .. '/liquigen/liquigen'
-      end,
-      cwd = '${workspaceFolder}',
+    lldb_launch = {
+      name = '(LLDB) Launch...',
+      type = 'lldb',
+      request = 'launch',
+      program = prompt_program,
+      args = prompt_args,
+      -- TODO: set cwd
       stopOnEntry = false,
-      args = {},
       runInTerminal = false,
+    }
+    lldb_attach = {
+      name = '(LLDB) Attach to process',
+      type = 'lldb',
+      request = 'attach',
+      pid = require('dap.utils').pick_process,
+      -- TODO: set cwd
+      program = prompt_program,
     }
 
     dap.configurations.odin = {
-      liquigen_gdb,
-      liquigen_lldb,
-      gdb,
-      lldb,
-      attach_gdb,
-      attach_lldb,
+      gdb_janga_project,
+      gdb_liquigen,
+      lldb_liquigen,
+      gdb_launch,
+      gdb_attach,
+      lldb_launch,
+      lldb_attach,
     }
     require('nvim-dap-virtual-text').setup {
       enabled = true,
