@@ -866,6 +866,8 @@ require('lazy').setup({
       --line_up = '<M-k>',
       require('mini.move').setup()
 
+      require('mini.align').setup()
+
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
       --  and try some other statusline plugin
